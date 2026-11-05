@@ -1,0 +1,23 @@
+# Local configuration, credentials and runtime state never belong in a release.
+**/credentials.json
+**/config.json
+**/stream-state.json
+**/last-supervisor-error.json
+**/baseline-display.json
+**/display-target.json
+**/request-*.json
+**/state-*.tmp
+**/credential-*.tmp
+**/shared/
+**/__pycache__/
+*.py[cod]
+*.log
+*.lnk
+*.exe
+*.dll
+*.msi
+*.zip
+.env
+.env.*
+dist/
+.venv/
