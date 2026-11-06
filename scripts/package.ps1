@@ -15,10 +15,12 @@ foreach ($file in $files) {
 }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 $null = New-Item -ItemType Directory -Path $output -Force
-$archive = Join-Path $output 'browsed-local-0.1.0.zip'
+$version = (Get-Content -LiteralPath (Join-Path $root 'VERSION') -Raw).Trim()
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION must be MAJOR.MINOR.PATCH.' }
+$archive = Join-Path $output ('browsed-local-' + $version + '.zip')
 if (Test-Path -LiteralPath $archive) { throw 'Release archive already exists; choose a new output directory.' }
 & git -C $root archive --format=zip --prefix=browsed-local/ ('--output=' + $archive) HEAD
 if ($LASTEXITCODE -ne 0) { throw 'Git archive failed.' }
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText(($archive + '.sha256'), ($hash + '  ' + [IO.Path]::GetFileName($archive) + "`n"), [Text.UTF8Encoding]::new($false))
-[pscustomobject]@{archive=$archive;sha256=$hash;sourceCommit=(& git -C $root rev-parse HEAD)} | ConvertTo-Json
+[pscustomobject]@{version=$version;archive=$archive;sha256=$hash;sourceCommit=(& git -C $root rev-parse HEAD)} | ConvertTo-Json
