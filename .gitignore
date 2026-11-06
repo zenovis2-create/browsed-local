@@ -9,6 +9,7 @@
 **/state-*.tmp
 **/credential-*.tmp
 **/shared/
+**/logs/
 **/__pycache__/
 *.py[cod]
 *.log

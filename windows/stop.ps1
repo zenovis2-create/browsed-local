@@ -1,5 +1,7 @@
 #requires -Version 7.0
 . (Join-Path $PSScriptRoot 'common.ps1')
+# The pointer overlay and window guard belong to the stream; stop them with it.
+try { & (Join-Path $PSScriptRoot 'stop-helpers.ps1') | Out-Null } catch { }
 $owned = Get-OwnedStream
 if ($null -eq $owned) {
 	@{endpoint='127.0.0.1:16901'; status='stopped'} | ConvertTo-Json

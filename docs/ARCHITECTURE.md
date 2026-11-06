@@ -12,6 +12,8 @@
 | `windows/status.ps1` | 화면 정체성, 인증 401/200, PNG 크기 검증 |
 | `windows/virtual-display/monitor-tools.ps1` | GDI·DXGI·SetupAPI 네이티브 화면 검사 |
 | `windows/control-panel/` | Tkinter GUI, 비동기 요청 모델, PowerShell 브리지 |
+| `windows/helpers.ps1`, `start-helpers.ps1`, `stop-helpers.ps1` | 포인터 오버레이와 창 가드 시작·중지(선택 기능) |
+| `windows/vscreen/` | 오버레이, 창 가드, `vscreen` CLI, 공통 Win32 모듈과 단위 테스트 |
 
 ## 화면 선택
 
@@ -32,3 +34,11 @@ GUI를 닫는 것은 Tk 창만 닫습니다. 서버는 감시 프로세스와 �
 Tk 위젯은 메인 스레드에서만 수정합니다. 작업 스레드는 PowerShell 결과를 큐로 전달하며, 주기적 상태 조회는 약 6초 간격입니다. 켜기·끄기가 진행 중이면 충돌하는 조작을 막습니다. 요청 세대 번호로 오래된 상태 조회가 새 조작 결과를 덮지 못하게 합니다.
 
 결과는 고유한 임시 JSON 파일에 닫힌 상태로 기록하고 GUI가 읽은 뒤 삭제합니다. 표준 출력 파이프로 결과를 받으면 장기 실행 감시 프로세스가 핸들을 상속해 부모 종료 후에도 EOF가 오지 않을 수 있습니다. 파일 전달 방식은 이 정지 문제를 피합니다. 결과와 오류는 정해진 상태 코드만 포함합니다.
+
+## 포인터 오버레이와 창 가드
+
+Windows 커서는 하나이고 DXGI 복제 영상에는 커서가 없습니다. 브라우저에서 마우스를 움직이면 Voxl이 `SendInput`의 절대 좌표 이동으로 같은 커서를 가상 모니터로 옮기므로, 실제 모니터에서는 포인터가 사라집니다. `windows/vscreen/cursor_overlay.py`는 가상 모니터 위에 클릭이 통과하는 투명 창(`WS_EX_LAYERED | TRANSPARENT | TOPMOST | NOACTIVATE`, `UpdateLayeredWindow`)을 띄워 커서 모양과 클릭·휠 표시를 영상에 직접 그립니다. 저수준 마우스 훅의 콜백은 큐에 넣기만 하고 즉시 반환합니다.
+
+`window_guard.py`는 `SetWinEventHook`(`OBJECT_SHOW`, `OBJECT_UNCLOAKED`)으로 새 창을 감지하고, 저수준 훅으로 마지막 입력이 가상 모니터에서 일어났는지 추적합니다. 판단 규칙은 `guard_logic.py`의 순수 함수에 있어 단위 테스트합니다. 시작 시점의 기존 창은 모두 제외하고, 포커스 변경 이벤트는 감시하지 않습니다.
+
+두 프로그램은 모든 좌표를 프로세스별 모니터 DPI 인식(v2) 실제 픽셀로 다룹니다. 실제 모니터는 200%, 가상 모니터는 100%라서, 창이 모니터를 넘으면 앱이 스스로 크기를 다시 스케일하기 때문에 이동 후 크기를 한 번 더 맞춥니다.

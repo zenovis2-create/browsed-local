@@ -5,6 +5,8 @@ if (-not $mutex.WaitOne(10000)) { throw 'Another Windows stream startup is in pr
 try {
 	$existing = Get-OwnedStream
 	if ($null -ne $existing -and $existing.Listeners.Count -gt 0) {
+		# Optional helpers (pointer overlay, window guard); a failure here must never affect the stream.
+		try { & (Join-Path $StreamRoot 'start-helpers.ps1') | Out-Null } catch { }
 		& (Join-Path $StreamRoot 'status.ps1')
 		return
 	}
@@ -41,6 +43,7 @@ try {
 		if ($supervisor.HasExited) { break }
 	}
 	if (-not $ready) { throw 'Windows stream did not become ready within 10 seconds; inspect last-supervisor-error.json.' }
+	try { & (Join-Path $StreamRoot 'start-helpers.ps1') | Out-Null } catch { }
 	& (Join-Path $StreamRoot 'status.ps1')
 } finally {
 	$mutex.ReleaseMutex()
