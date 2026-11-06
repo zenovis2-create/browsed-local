@@ -24,5 +24,21 @@ function Resolve-Pythonw {
 	}
 	$direct = Get-Command pythonw -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 	if ($null -ne $direct) { return $direct.Source }
+	# Registered installs (python.org installer): newest version first. PATH may hold only a wrapper.
+	foreach ($hive in @('HKCU:', 'HKLM:')) {
+		$core = Join-Path $hive 'Software\Python\PythonCore'
+		if (-not (Test-Path -LiteralPath $core)) { continue }
+		foreach ($version in (Get-ChildItem -LiteralPath $core | Sort-Object { [version]($_.PSChildName -replace '-.*$', '') } -Descending -ErrorAction SilentlyContinue)) {
+			$install = (Get-ItemProperty -LiteralPath (Join-Path $version.PSPath 'InstallPath') -ErrorAction SilentlyContinue).'(default)'
+			if ($install) { $candidate = Join-Path $install 'pythonw.exe'; if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate } }
+		}
+	}
 	throw 'pythonw.exe was not found; install Python 3.10+ (the GUI needs it too).'
+}
+
+# Start-Process joins -ArgumentList with plain spaces, so anything containing a space must be quoted
+# here, or "zenovis — Windows" arrives as three arguments and the helper exits silently (no console).
+function Quote-Argument([string]$Value) {
+	if ($Value -match '[\s"]') { return '"' + ($Value -replace '"', '\"') + '"' }
+	return $Value
 }

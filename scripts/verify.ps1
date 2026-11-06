@@ -26,6 +26,7 @@ try {
 	& $python -B -m unittest test_sprites test_monitors test_guard_logic test_input
 	if ($LASTEXITCODE -ne 0) { throw 'vscreen tests failed.' }
 } finally { Pop-Location }
+& (Join-Path $PSScriptRoot 'test_helpers.ps1')
 if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'test_runtime.ps1')) {
 	& (Join-Path $PSScriptRoot 'test_runtime.ps1')
 }
